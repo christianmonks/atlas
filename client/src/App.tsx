@@ -8,6 +8,7 @@ import MarketAnalysis from "@/pages/MarketAnalysis";
 import TestResults from "@/pages/TestResults";
 import Reports from "@/pages/Reports";
 import ModelOperations from "@/pages/ModelOperations";
+import ModelDevelopment from "@/pages/ModelDevelopment";
 import Settings from "@/pages/Settings";
 import NotFound from "@/pages/not-found";
 import MainLayout from "@/components/layout/MainLayout";
@@ -21,6 +22,7 @@ function Router() {
       <Route path="/test-results" component={TestResults} />
       <Route path="/reports" component={Reports} />
       <Route path="/model-operations" component={ModelOperations} />
+      <Route path="/model-development" component={ModelDevelopment} />
       <Route path="/settings" component={Settings} />
       <Route component={NotFound} />
     </Switch>

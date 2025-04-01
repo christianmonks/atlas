@@ -17,6 +17,9 @@ const ModelOperations: React.FC = () => {
             <Info className="h-4 w-4 mr-2" />
             Documentation
           </Button>
+          <Button variant="outline" asChild>
+            <a href="/model-development">Model Development</a>
+          </Button>
           <Button>View Model Logs</Button>
         </div>
       </div>

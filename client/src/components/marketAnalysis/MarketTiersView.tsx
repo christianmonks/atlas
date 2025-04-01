@@ -279,8 +279,8 @@ const MarketTiersView: React.FC<MarketTiersViewProps> = ({ csvData }) => {
       )}
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card className="p-4">
-          <h3 className="text-lg font-medium mb-4 text-center">Socioeconomic Feature Weights for Users Tiers</h3>
+        <Card className="p-6">
+          <h3 className="text-lg font-medium mb-4 text-center">Feature Importance for Market Tiers</h3>
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -288,44 +288,90 @@ const MarketTiersView: React.FC<MarketTiersViewProps> = ({ csvData }) => {
                   data={pieChartData}
                   cx="50%"
                   cy="50%"
-                  labelLine={true}
-                  outerRadius={100}
+                  labelLine={false}
+                  outerRadius={90}
+                  innerRadius={40}
                   fill="#8884d8"
                   dataKey="Weight"
                   nameKey="Feature"
-                  label={({ name, percent }: {name: string, percent: number}) => `${name}: ${(percent * 100).toFixed(1)}%`}
+                  label={({ name, percent }: {name: string, percent: number}) => 
+                    percent > 0.05 ? `${name}: ${(percent * 100).toFixed(1)}%` : ''}
                 >
                   {pieChartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    <Cell 
+                      key={`cell-${index}`} 
+                      fill={COLORS[index % COLORS.length]} 
+                      stroke="#fff"
+                      strokeWidth={2}
+                    />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value: any) => `${(Number(value) * 100).toFixed(1)}%`} />
+                <Tooltip 
+                  formatter={(value: any) => `${(Number(value) * 100).toFixed(1)}%`} 
+                  contentStyle={{ 
+                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                    border: 'none'
+                  }}
+                />
+                <Legend 
+                  layout="vertical"
+                  verticalAlign="middle"
+                  align="right"
+                  wrapperStyle={{ paddingLeft: '10px' }}
+                />
               </PieChart>
             </ResponsiveContainer>
           </div>
         </Card>
         
-        <Card className="p-4">
+        <Card className="p-6">
           <h3 className="text-lg font-medium mb-4 text-center">
-            Top {topMarketsCount} Markets Per Tier Based on Users Score
+            Market Performance by Tier
           </h3>
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={marketBarData}
                 layout="vertical"
-                margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
+                margin={{ top: 5, right: 30, left: 60, bottom: 5 }}
               >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis type="number" />
-                <YAxis dataKey="name" type="category" width={120} />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="value" name="Market Score">
+                <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.3} />
+                <XAxis 
+                  type="number" 
+                  tickFormatter={(value) => value.toFixed(2)}
+                  domain={[0, 'dataMax + 0.1']}
+                />
+                <YAxis 
+                  dataKey="name" 
+                  type="category" 
+                  width={120}
+                  tick={{ fontSize: 12 }}
+                  tickFormatter={(value) => value.length > 15 ? `${value.substring(0, 15)}...` : value}
+                />
+                <Tooltip 
+                  formatter={(value: any) => typeof value === 'number' ? value.toFixed(4) : value}
+                  labelFormatter={(label) => `Market: ${label}`}
+                  contentStyle={{ 
+                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                    border: 'none'
+                  }}
+                />
+                <Legend verticalAlign="top" height={36} />
+                <Bar 
+                  dataKey="value" 
+                  name="Market Score"
+                  animationDuration={1000}
+                  radius={[0, 4, 4, 0]}
+                >
                   {marketBarData.map((entry, index) => (
                     <Cell 
                       key={`cell-${index}`} 
                       fill={COLOR_MAPPING[entry.tier as keyof typeof COLOR_MAPPING] || '#8884d8'} 
+                      fillOpacity={0.85}
                     />
                   ))}
                 </Bar>
@@ -335,19 +381,37 @@ const MarketTiersView: React.FC<MarketTiersViewProps> = ({ csvData }) => {
         </Card>
       </div>
       
-      <Card className="p-4">
-        <h3 className="text-lg font-medium mb-4 text-center">
-          Top {topMarketsCount} Markets Per Tier Based on Users Score
-        </h3>
+      <Card className="p-6">
+        <div className="flex flex-col md:flex-row justify-between items-center mb-4">
+          <h3 className="text-lg font-medium">Top Scoring Markets by Tier</h3>
+          <div className="flex items-center space-x-2 mt-2 md:mt-0">
+            <Select 
+              value={topMarketsCount.toString()} 
+              onValueChange={(val) => setTopMarketsCount(parseInt(val))}
+            >
+              <SelectTrigger className="w-[100px]">
+                <SelectValue placeholder="Show" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="5">Top 5</SelectItem>
+                <SelectItem value="10">Top 10</SelectItem>
+                <SelectItem value="15">Top 15</SelectItem>
+                <SelectItem value="20">Top 20</SelectItem>
+              </SelectContent>
+            </Select>
+            <div className="text-sm text-neutral-500">per tier</div>
+          </div>
+        </div>
+        
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-neutral-200">
-            <thead className="bg-neutral-50">
+          <table className="min-w-full divide-y divide-neutral-200 border-separate border-spacing-0">
+            <thead className="bg-neutral-50 sticky top-0">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Tier</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider rounded-tl-md">Tier</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Market Name</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Market Code</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Score</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Tier Rank</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider rounded-tr-md">Tier Rank</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-neutral-200">
@@ -361,15 +425,52 @@ const MarketTiersView: React.FC<MarketTiersViewProps> = ({ csvData }) => {
                   const scoreB = typeof b[scoreColumn] === 'number' ? b[scoreColumn] : 0;
                   return scoreB - scoreA;
                 })
-                .map((market, index) => (
-                  <tr key={index}>
-                    <td className="px-6 py-4 whitespace-nowrap">{market[TIER]}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">{market[marketNameColumn]}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">{market[marketCodeColumn]}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">{(market[scoreColumn] !== null && market[scoreColumn] !== undefined) ? Number(market[scoreColumn]).toFixed(4) : '0.0000'}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">{market.TierRank}</td>
-                  </tr>
-                ))}
+                .map((market, index) => {
+                  // Determine the color for each tier
+                  const tierColor = market[TIER] ? COLOR_MAPPING[market[TIER] as keyof typeof COLOR_MAPPING] : '#888';
+                  
+                  return (
+                    <tr 
+                      key={index}
+                      className="hover:bg-neutral-50 transition-colors"
+                    >
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div 
+                            className="w-3 h-3 rounded-full mr-2" 
+                            style={{ backgroundColor: tierColor }}
+                          />
+                          <span>{market[TIER]}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap font-medium">{market[marketNameColumn]}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-neutral-600">{market[marketCodeColumn]}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="w-16 bg-neutral-200 rounded-full h-2 mr-2">
+                            <div 
+                              className="h-2 rounded-full" 
+                              style={{ 
+                                width: `${(market[scoreColumn] !== null && market[scoreColumn] !== undefined) ? 
+                                  Math.min(Number(market[scoreColumn]) * 100, 100) : 0}%`,
+                                backgroundColor: tierColor 
+                              }}
+                            />
+                          </div>
+                          <span>
+                            {(market[scoreColumn] !== null && market[scoreColumn] !== undefined) ? 
+                              Number(market[scoreColumn]).toFixed(4) : '0.0000'}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="px-2 py-1 text-xs rounded-full bg-neutral-100">
+                          #{market.TierRank}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
             </tbody>
           </table>
         </div>

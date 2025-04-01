@@ -373,138 +373,274 @@ const MatchedMarketsView: React.FC<MatchedMarketsViewProps> = ({ csvData }) => {
       
       {matchedMarkets.length > 0 && (
         <>
-          <Card className="p-4">
+          <Card className="p-6">
             <CardHeader className="pb-0">
-              <CardTitle className="text-center">Matched Markets Based on Similarity Index</CardTitle>
+              <CardTitle className="text-center">Matched Market Pairs</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-neutral-200">
-                  <thead className="bg-neutral-50">
+                <table className="min-w-full divide-y divide-neutral-200 border-separate border-spacing-0">
+                  <thead className="bg-neutral-50 sticky top-0">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Tier</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider rounded-tl-md">Tier</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Test Market</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Control Market</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Similarity Index</th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider rounded-tr-md">Similarity</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-neutral-200">
-                    {matchedMarkets.map((pair, index) => (
-                      <tr key={index}>
-                        <td className="px-6 py-4 whitespace-nowrap">{pair[TIER]}</td>
-                        <td className="px-6 py-4 whitespace-nowrap">{pair["Test Market Name"]}</td>
-                        <td className="px-6 py-4 whitespace-nowrap">{pair["Control Market Name"]}</td>
-                        <td className="px-6 py-4 whitespace-nowrap">{pair["Similarity Index"]}</td>
-                      </tr>
-                    ))}
+                    {matchedMarkets.map((pair, index) => {
+                      // Calculate similarity score percentage
+                      const simScore = parseFloat(pair["Similarity Index"]);
+                      const scorePercent = Math.round(simScore * 100);
+                      
+                      // Get tier color
+                      const tierColor = COLOR_MAPPING[pair[TIER] as keyof typeof COLOR_MAPPING] || '#888';
+                      
+                      return (
+                        <tr 
+                          key={index}
+                          className="hover:bg-neutral-50 transition-colors"
+                        >
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <div 
+                                className="w-3 h-3 rounded-full mr-2" 
+                                style={{ backgroundColor: tierColor }}
+                              />
+                              <span>{pair[TIER]}</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="font-medium">{pair["Test Market Name"]}</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="font-medium text-neutral-600">{pair["Control Market Name"]}</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right">
+                            <div className="flex items-center justify-end">
+                              <div className="w-24 bg-neutral-200 rounded-full h-2 mr-2">
+                                <div 
+                                  className="h-2 rounded-full bg-primary" 
+                                  style={{ width: `${scorePercent}%` }}
+                                />
+                              </div>
+                              <span className={scorePercent > 90 ? "text-green-600 font-medium" : scorePercent > 70 ? "text-amber-600" : "text-neutral-600"}>
+                                {scorePercent}%
+                              </span>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
             </CardContent>
           </Card>
           
-          <Card className="p-4">
-            <CardHeader>
-              <CardTitle className="text-center">Matched Markets Analysis</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                <Card>
-                  <CardHeader className="p-4 pb-2">
-                    <CardTitle className="text-sm">KPI Name</CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-4 pt-0">
-                    <p className="text-2xl font-semibold">{kpiColumn}</p>
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardHeader className="p-4 pb-2">
-                    <CardTitle className="text-sm">Correlation: Test vs Control</CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-4 pt-0">
-                    <p className="text-2xl font-semibold">{correlation.toFixed(2)}</p>
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardHeader className="p-4 pb-2">
-                    <CardTitle className="text-sm">Test Average</CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-4 pt-0">
-                    <p className="text-2xl font-semibold">{testAverage.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardHeader className="p-4 pb-2">
-                    <CardTitle className="text-sm">Control Average</CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-4 pt-0">
-                    <p className="text-2xl font-semibold">{controlAverage.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
-                  </CardContent>
-                </Card>
-              </div>
-              
-              <div className="h-96">
-                <ResponsiveContainer width="100%" height="100%">
-                  {dateColumn ? (
-                    <LineChart data={chartData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis 
-                        dataKey="date" 
-                        label={{ value: 'Time Period', position: 'insideBottom', offset: -5 }} 
-                      />
-                      <YAxis 
-                        label={{ value: kpiColumn, angle: -90, position: 'insideLeft' }} 
-                      />
-                      <Tooltip />
-                      <Legend />
-                      <Line 
-                        type="monotone" 
-                        dataKey="testMarkets" 
-                        name="Test Markets" 
-                        stroke={COLOR_MAPPING["Test Markets"]} 
-                        strokeWidth={2} 
-                      />
-                      <Line 
-                        type="monotone" 
-                        dataKey="controlMarkets" 
-                        name="Control Markets" 
-                        stroke={COLOR_MAPPING["Control Markets"]} 
-                        strokeWidth={2} 
-                      />
-                    </LineChart>
-                  ) : (
-                    <BarChart data={chartData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="market" />
-                      <YAxis 
-                        label={{ value: kpiColumn, angle: -90, position: 'insideLeft' }} 
-                      />
-                      <Tooltip />
-                      <Legend />
-                      <Bar 
-                        dataKey="value" 
-                        name={kpiColumn} 
-                        fill="#8884d8" 
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <Card className="p-6 lg:col-span-2">
+              <CardHeader className="pb-0">
+                <CardTitle className="text-center">KPI Comparison: Test vs Control Markets</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-96">
+                  <ResponsiveContainer width="100%" height="100%">
+                    {dateColumn ? (
+                      <LineChart data={chartData}>
+                        <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.3} />
+                        <XAxis 
+                          dataKey="date" 
+                          label={{ value: 'Time Period', position: 'insideBottom', offset: -5 }}
+                          tick={{ fontSize: 12 }}
+                        />
+                        <YAxis 
+                          label={{ value: kpiColumn, angle: -90, position: 'insideLeft' }}
+                          tick={{ fontSize: 12 }} 
+                        />
+                        <Tooltip 
+                          contentStyle={{ 
+                            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                            borderRadius: '8px',
+                            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                            border: 'none'
+                          }}
+                          formatter={(value: any) => [Number(value).toLocaleString(undefined, { maximumFractionDigits: 2 }), '']}
+                        />
+                        <Legend 
+                          verticalAlign="top" 
+                          height={36}
+                          iconType="circle"
+                        />
+                        <Line 
+                          type="monotone" 
+                          dataKey="testMarkets" 
+                          name="Test Markets" 
+                          stroke={COLOR_MAPPING["Tier 1"] || "#0088FE"} 
+                          strokeWidth={3}
+                          activeDot={{ r: 6, strokeWidth: 0 }}
+                          dot={{ strokeWidth: 2, r: 4, fill: '#fff' }}
+                          animationDuration={1500}
+                        />
+                        <Line 
+                          type="monotone" 
+                          dataKey="controlMarkets" 
+                          name="Control Markets" 
+                          stroke={COLOR_MAPPING["Tier 2"] || "#FF8042"} 
+                          strokeWidth={3}
+                          activeDot={{ r: 6, strokeWidth: 0 }}
+                          dot={{ strokeWidth: 2, r: 4, fill: '#fff' }}
+                          animationDuration={1500}
+                          animationBegin={300}
+                        />
+                      </LineChart>
+                    ) : (
+                      <BarChart 
+                        data={chartData}
+                        layout="vertical"
+                        margin={{ top: 20, right: 30, left: 40, bottom: 20 }}
                       >
-                        {chartData.map((entry, index) => {
-                          const market = 'market' in entry ? entry.market : '';
-                          return (
-                            <Cell 
-                              key={`cell-${index}`} 
-                              fill={COLOR_MAPPING[market as keyof typeof COLOR_MAPPING] || '#8884d8'} 
-                            />
-                          );
-                        })}
-                      </Bar>
-                    </BarChart>
-                  )}
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
+                        <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.3} horizontal={true} vertical={false} />
+                        <XAxis type="number" />
+                        <YAxis 
+                          dataKey="market" 
+                          type="category"
+                          tick={{ fontSize: 14, fontWeight: 500 }} 
+                          width={120}
+                        />
+                        <Tooltip 
+                          formatter={(value: any) => [Number(value).toLocaleString(undefined, { maximumFractionDigits: 2 }), kpiColumn]}
+                          contentStyle={{ 
+                            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                            borderRadius: '8px',
+                            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                            border: 'none'
+                          }}
+                        />
+                        <Legend 
+                          verticalAlign="top" 
+                          height={36}
+                        />
+                        <Bar 
+                          dataKey="value" 
+                          name={kpiColumn}
+                          animationDuration={1500}
+                          radius={[0, 4, 4, 0]}
+                        >
+                          {chartData.map((entry, index) => {
+                            const market = 'market' in entry ? entry.market : '';
+                            const color = market === 'Test Markets' 
+                              ? (COLOR_MAPPING["Tier 1"] || "#0088FE")
+                              : (COLOR_MAPPING["Tier 2"] || "#FF8042");
+                            return (
+                              <Cell 
+                                key={`cell-${index}`} 
+                                fill={color}
+                                fillOpacity={0.85}
+                              />
+                            );
+                          })}
+                        </Bar>
+                      </BarChart>
+                    )}
+                  </ResponsiveContainer>
+                </div>
+                <div className="flex justify-center gap-8 mt-4 text-sm text-neutral-500">
+                  <div className="flex items-center gap-2">
+                    <span className="inline-block w-3 h-3 rounded-full bg-primary"></span>
+                    <span>Selected Test Markets: {matchedMarkets.length}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="inline-block w-3 h-3 rounded-full" style={{ backgroundColor: COLOR_MAPPING["Tier 2"] || "#FF8042" }}></span>
+                    <span>Selected Control Markets: {matchedMarkets.length}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="p-6">
+              <CardHeader className="pb-2">
+                <CardTitle>KPI Performance Metrics</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div>
+                  <h3 className="text-sm font-medium text-neutral-500 mb-1">KPI Metric</h3>
+                  <p className="text-xl font-semibold">{kpiColumn}</p>
+                </div>
+                
+                <div>
+                  <h3 className="text-sm font-medium text-neutral-500 mb-1">
+                    Test Market Performance
+                  </h3>
+                  <p className="text-2xl font-semibold text-primary">
+                    {testAverage.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                  </p>
+                  <div className="text-sm mt-1">
+                    {testAverage > controlAverage ? (
+                      <span className="text-green-600">
+                        {((testAverage / controlAverage - 1) * 100).toFixed(1)}% higher than control
+                      </span>
+                    ) : (
+                      <span className="text-red-600">
+                        {((1 - testAverage / controlAverage) * 100).toFixed(1)}% lower than control
+                      </span>
+                    )}
+                  </div>
+                </div>
+                
+                <div>
+                  <h3 className="text-sm font-medium text-neutral-500 mb-1">
+                    Control Market Performance
+                  </h3>
+                  <p className="text-2xl font-semibold" style={{ color: COLOR_MAPPING["Tier 2"] || "#FF8042" }}>
+                    {controlAverage.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                  </p>
+                </div>
+                
+                <div>
+                  <h3 className="text-sm font-medium text-neutral-500 mb-1">
+                    Correlation Coefficient
+                  </h3>
+                  <div className="flex items-center">
+                    <div className="text-2xl font-semibold mr-2">
+                      {correlation.toFixed(2)}
+                    </div>
+                    <div className="flex-1 h-2 bg-neutral-200 rounded-full">
+                      <div 
+                        className="h-2 rounded-full" 
+                        style={{ 
+                          width: `${Math.abs(correlation) * 100}%`,
+                          backgroundColor: correlation > 0.7 ? '#10b981' : correlation > 0.3 ? '#f59e0b' : '#ef4444'
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <div className="text-sm mt-1">
+                    {correlation > 0.7 ? (
+                      <span className="text-green-600">Strong correlation</span>
+                    ) : correlation > 0.3 ? (
+                      <span className="text-amber-600">Moderate correlation</span>
+                    ) : (
+                      <span className="text-red-600">Weak correlation</span>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="pt-3">
+                  <h3 className="text-sm font-medium text-neutral-500 mb-1">
+                    Incrementality Estimate
+                  </h3>
+                  <div className="text-2xl font-semibold">
+                    {((testAverage / controlAverage - 1) * 100).toFixed(1)}%
+                  </div>
+                  <div className="text-sm mt-1 text-neutral-500">
+                    Based on selected market pairs
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </>
       )}
     </div>

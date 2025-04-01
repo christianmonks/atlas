@@ -28,10 +28,10 @@ const TestCard: React.FC<TestCardProps> = ({ test }) => {
   const formatDateRange = (start: string, end: string) => {
     const startObj = new Date(start);
     const endObj = new Date(end);
-    
+
     const startFormat = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(startObj);
     const endFormat = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(endObj);
-    
+
     return `${startFormat} - ${endFormat}`;
   };
 
@@ -104,11 +104,9 @@ const TestCard: React.FC<TestCardProps> = ({ test }) => {
             </div>
           )}
           <div className="mt-4 flex justify-end">
-            <Link href={`/test-results/${id}`}>
-              <a className="text-sm font-medium text-primary hover:text-primary-700 flex items-center">
+            <Link href={`/test-results/${id}`} className="text-sm font-medium text-primary hover:text-primary-700 flex items-center">
                 {status.toLowerCase() === 'completed' ? 'View Report' : 'View Details'} 
                 <ArrowRight className="ml-1 h-4 w-4" />
-              </a>
             </Link>
           </div>
         </div>

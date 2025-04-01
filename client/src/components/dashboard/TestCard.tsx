@@ -76,7 +76,7 @@ const TestCard: React.FC<TestCardProps> = ({ test }) => {
           {status.toLowerCase() === 'active' && (
             <div className="flex justify-between text-sm">
               <span className="text-neutral-500">Test Budget:</span>
-              <span className="font-medium text-neutral-800">${budget.toLocaleString()}</span>
+              <span className="font-medium text-neutral-800">${budget?.toLocaleString() || '0'}</span>
             </div>
           )}
           {status.toLowerCase() === 'completed' && incrementality && (
@@ -104,9 +104,11 @@ const TestCard: React.FC<TestCardProps> = ({ test }) => {
             </div>
           )}
           <div className="mt-4 flex justify-end">
-            <Link href={`/test-results/${id}`} className="text-sm font-medium text-primary hover:text-primary-700 flex items-center">
+            <Link href={`/test-results/${id}`}>
+              <div className="text-sm font-medium text-primary hover:text-primary-700 flex items-center cursor-pointer">
                 {status.toLowerCase() === 'completed' ? 'View Report' : 'View Details'} 
                 <ArrowRight className="ml-1 h-4 w-4" />
+              </div>
             </Link>
           </div>
         </div>

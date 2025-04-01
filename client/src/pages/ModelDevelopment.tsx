@@ -449,26 +449,40 @@ def power_analysis_for_matched_markets(n_pairs, effect_size=None, variance=1.0, 
     });
   };
 
-  // Mock function to simulate model execution
+  // Simulated progressive model execution with step-by-step output
   const executeModel = () => {
     setIsExecuting(true);
-    setOutputResult("Executing model...");
+    setOutputResult("");
     
-    // Simulate API call delay
-    setTimeout(() => {
-      const params = modelParams[activeModelTab];
-      let result = "";
+    const params = modelParams[activeModelTab];
+    let result = "";
+    let steps: string[] = [];
+    let stepDelays: number[] = [];
+    
+    if (activeModelTab === "market-matching") {
+      steps = [
+        `Importing libraries: pandas, numpy, scipy...
+Loading data from ${params.dataSource}...`,
       
-      if (activeModelTab === "market-matching") {
-        result = `Executing Market Matching Algorithm with parameters:
-- Data Source: ${params.dataSource}
-- Market Column: ${params.marketColumn}
-- Feature Columns: ${params.featureColumns}
-- Excluded Markets: ${params.excludeMarkets || "None"}
-
-Processing data...
-Computing similarity matrix...
-Applying Hungarian algorithm for optimal market pairing...
+        `Data loaded successfully.
+Rows: 578, Columns: 15
+Features extracted: ${params.featureColumns}
+${params.excludeMarkets ? `Excluded markets: ${params.excludeMarkets}` : "No markets excluded"}`,
+      
+        `Preprocessing data...
+Normalizing features...
+Applying feature weights:
+- Population: ${params.weightPopulation}
+- Income: ${params.weightIncome}
+- Sales: ${params.weightSales}`,
+      
+        `Computing similarity matrix (578x578)...
+[####################] 100%
+Matrix computed in 1.23s`,
+      
+        `Applying Hungarian algorithm for optimal market pairing...
+[####################] 100%
+Optimization complete in 0.75s
 
 Results:
 Matched 18 test markets with control markets
@@ -480,17 +494,36 @@ Top market pairs:
 4. San Diego - Dallas (similarity: 0.81)
 5. Miami - Atlanta (similarity: 0.79)
 
-Market pairs saved to matched_markets.csv`;
-      } else if (activeModelTab === "counterfactual") {
-        result = `Executing Counterfactual Generation Model with parameters:
-- Test Data: ${params.testData}
-- Control Data: ${params.controlData}
-- Date Column: ${params.dateColumn}
-- KPI Column: ${params.kpiColumn}
-- Forecast Periods: ${params.forecastPeriods}
-
-Fitting SARIMAX model...
-Generating counterfactual predictions...
+Market pairs saved to matched_markets.csv
+Process completed successfully in 3.71s`
+      ];
+      stepDelays = [800, 1200, 1000, 1500, 1800];
+    } else if (activeModelTab === "counterfactual") {
+      steps = [
+        `Importing libraries: pandas, numpy, statsmodels, sklearn...
+Loading test data from ${params.testData}...
+Loading control data from ${params.controlData}...`,
+      
+        `Data loaded successfully.
+Test data: 365 rows x 8 columns
+Control data: 365 rows x 8 columns
+Date column: ${params.dateColumn}
+KPI column: ${params.kpiColumn}`,
+      
+        `Preprocessing time series data...
+Checking for missing values...
+Aligning test and control data...
+Determining training period (${parseInt(params.forecastPeriods)} periods forecast)...`,
+      
+        `Fitting SARIMAX model...
+Order: (1, 1, 1)
+Seasonal Order: (1, 1, 1, 12)
+[####################] 100%
+Model fit complete in 2.84s`,
+      
+        `Generating counterfactual predictions...
+[####################] 100%
+Predictions generated for all ${parseInt(params.forecastPeriods)} periods
 
 Results:
 Model fit statistics:
@@ -504,16 +537,33 @@ Incrementality Results:
 - Absolute Lift: 188,889
 - Percent Lift: 8.76%
 
-Counterfactual results saved to counterfactual_results.csv`;
-      } else if (activeModelTab === "power-analysis") {
-        result = `Executing Power Analysis with parameters:
+Counterfactual results saved to counterfactual_results.csv
+Visualization saved to counterfactual_plot.png
+Process completed successfully in 4.35s`
+      ];
+      stepDelays = [800, 1000, 1200, 2000, 1500];
+    } else if (activeModelTab === "power-analysis") {
+      steps = [
+        `Importing libraries: numpy, scipy...
+Initializing power analysis with parameters:
 - Number of Market Pairs: ${params.numPairs}
 - Expected Effect Size: ${params.effectSize}
 - Variance: ${params.variance}
 - Correlation between pairs: ${params.correlation}
-- Alpha (significance level): ${params.alpha}
-
-Computing statistical power...
+- Alpha (significance level): ${params.alpha}`,
+      
+        `Computing standard error...
+SE = √(2 * ${params.variance} * (1 - ${params.correlation}) / ${params.numPairs})
+SE = ${(Math.sqrt(2 * parseFloat(params.variance) * (1 - parseFloat(params.correlation)) / parseInt(params.numPairs))).toFixed(4)}`,
+      
+        `Calculating z-scores...
+z_alpha (${parseFloat(params.alpha)}) = ${(1.96).toFixed(4)}
+z_beta (0.80) = ${(0.84).toFixed(4)}`,
+      
+        `Computing statistical power...
+Power = Φ(z_effect - z_alpha)
+[####################] 100%
+Power calculation complete in 0.12s
 
 Results:
 For ${params.numPairs} market pairs with correlation ${params.correlation}:
@@ -521,35 +571,105 @@ For ${params.numPairs} market pairs with correlation ${params.correlation}:
 - Minimum Detectable Effect: 12.3%
 - Confidence Level: ${(1 - parseFloat(params.alpha)) * 100}%
 
-With this test design, you have an 86.4% chance of detecting a true effect of ${parseFloat(params.effectSize) * 100}% or larger.`;
+With this test design, you have an 86.4% chance of detecting a true effect of ${(parseFloat(params.effectSize) * 100).toFixed(1)}% or larger.
+
+Power curve saved to power_analysis_curve.png
+Process completed successfully in 0.94s`
+      ];
+      stepDelays = [800, 1000, 800, 1500];
+    }
+    
+    // Progressive output simulation
+    let currentStep = 0;
+    
+    const updateOutput = () => {
+      if (currentStep < steps.length) {
+        // Add new step to the result
+        result += (currentStep > 0 ? "\n\n" : "") + steps[currentStep];
+        setOutputResult(result);
+        
+        // Schedule next step
+        currentStep++;
+        if (currentStep < steps.length) {
+          setTimeout(updateOutput, stepDelays[currentStep - 1]);
+        } else {
+          setTimeout(() => setIsExecuting(false), 500);
+        }
+      } else {
+        setIsExecuting(false);
       }
-      
-      setOutputResult(result);
-      setIsExecuting(false);
-    }, 2000);
+    };
+    
+    // Start the progressive output
+    setTimeout(updateOutput, 500);
   };
 
-  // Mock function to simulate model deployment
+  // Simulated progressive model deployment with step-by-step output
   const deployModel = () => {
     setIsExecuting(true);
-    setOutputResult("Deploying model to production environment...");
+    setOutputResult("");
     
-    // Simulate deployment delay
-    setTimeout(() => {
-      setOutputResult(`
-Model ${activeModelTab} successfully deployed to production!
+    const modelId = `${activeModelTab}-${Date.now().toString().substring(8)}`;
+    const timestamp = new Date().toISOString();
+    let result = "";
+    let steps: string[] = [
+      `Preparing ${activeModelTab} model for deployment...
+Validating model code...
+Running unit tests...`,
+      
+      `Serializing model objects...
+Compressing model artifacts...
+[####################] 100%
+Model artifacts created successfully.`,
+      
+      `Connecting to model registry...
+Uploading model artifacts...
+[####################] 100%
+Model uploaded successfully.`,
+      
+      `Registering API endpoints...
+Creating documentation...
+Configuring rate limits...
+Setting up model monitoring...`,
+      
+      `Deployment completed successfully!
 
 Version Information:
-- Model ID: ${activeModelTab}-${Date.now().toString().substring(8)}
+- Model ID: ${modelId}
 - Deployed by: Admin
-- Timestamp: ${new Date().toISOString()}
+- Timestamp: ${timestamp}
 - Status: Active
 
 The model is now available for use in the production environment.
 You can access it through the API at /api/models/${activeModelTab}
-`);
-      setIsExecuting(false);
-    }, 3000);
+
+Monitoring dashboard: https://dashboard.atlas.ai/models/${modelId}`
+    ];
+    let stepDelays = [1000, 1500, 2000, 1500, 1000];
+    
+    // Progressive output simulation
+    let currentStep = 0;
+    
+    const updateOutput = () => {
+      if (currentStep < steps.length) {
+        // Add new step to the result
+        result += (currentStep > 0 ? "\n\n" : "") + steps[currentStep];
+        setOutputResult(result);
+        
+        // Schedule next step
+        currentStep++;
+        if (currentStep < steps.length) {
+          setTimeout(updateOutput, stepDelays[currentStep - 1]);
+        } else {
+          setTimeout(() => setIsExecuting(false), 500);
+        }
+      } else {
+        setIsExecuting(false);
+      }
+    };
+    
+    // Start the progressive output
+    setTimeout(updateOutput, 500);
   };
 
   return (
@@ -601,14 +721,47 @@ You can access it through the API at /api/models/${activeModelTab}
               Edit model code and parameters
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="border rounded-md bg-neutral-50 p-2 font-mono text-sm">
-              <Textarea
-                className="min-h-[500px] font-mono resize-none bg-neutral-50 border-0 focus-visible:ring-0 p-2"
-                placeholder="# Enter your model code here"
-                value={code[activeModelTab]}
-                onChange={(e) => handleCodeChange(e.target.value)}
-              />
+          <CardContent className="p-0">
+            <div className="border rounded-md overflow-hidden">
+              <div className="bg-[#1e1e1e] text-white p-2 flex justify-between items-center">
+                <div className="flex space-x-2">
+                  <div className="h-3 w-3 rounded-full bg-red-400"></div>
+                  <div className="h-3 w-3 rounded-full bg-yellow-400"></div>
+                  <div className="h-3 w-3 rounded-full bg-green-400"></div>
+                </div>
+                <div className="text-xs text-gray-400">python - {activeModelTab}.py</div>
+                <div className="flex space-x-2 text-xs text-gray-400">
+                  <span>Python 3.8.10</span>
+                </div>
+              </div>
+              
+              <div className="relative bg-[#1e1e1e] text-white">
+                {/* Line numbers */}
+                <div className="absolute top-0 left-0 bottom-0 w-12 bg-[#252525] flex flex-col items-end pr-2 pt-2 pb-2 text-[#6e6e6e] font-mono text-xs select-none">
+                  {code[activeModelTab].split('\n').map((_, i) => (
+                    <div key={i} className="leading-6">{i + 1}</div>
+                  ))}
+                </div>
+                
+                {/* Code editor */}
+                <Textarea
+                  className="min-h-[500px] font-mono text-sm resize-none bg-[#1e1e1e] border-0 focus-visible:ring-0 pl-14 pr-4 pt-2 pb-2 w-full text-[#d4d4d4]"
+                  placeholder="# Enter your model code here"
+                  value={code[activeModelTab]}
+                  onChange={(e) => handleCodeChange(e.target.value)}
+                  spellCheck={false}
+                />
+              </div>
+              
+              {/* Status bar */}
+              <div className="bg-[#007acc] text-white text-xs flex justify-between items-center px-3 py-1">
+                <div>Python</div>
+                <div className="flex space-x-4">
+                  <span>Ln {code[activeModelTab].split('\n').length}</span>
+                  <span>UTF-8</span>
+                  <span>Spaces: 4</span>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -871,15 +1024,58 @@ You can access it through the API at /api/models/${activeModelTab}
                     )}
                   </div>
                 </div>
-                <div className="bg-neutral-50 border rounded-md p-4 min-h-[500px] font-mono text-sm whitespace-pre-wrap overflow-auto">
-                  {outputResult || "Execute a model to see results..."}
-                  
-                  {/* Loading spinner when executing */}
-                  {isExecuting && (
-                    <div className="flex justify-center mt-4">
-                      <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full"></div>
+                <div className="bg-[#1e1e1e] border-0 rounded-md min-h-[500px] font-mono text-sm whitespace-pre-wrap overflow-auto">
+                  <div className="flex items-center bg-[#252525] px-4 py-2 border-b border-[#3e3e3e] text-xs text-gray-400">
+                    <div className="flex-1">Terminal - Python Console</div>
+                    <div className="flex space-x-4">
+                      <span>Python 3.8.10</span>
+                      <span>UTF-8</span>
                     </div>
-                  )}
+                  </div>
+                  
+                  <div className="p-4 text-[#d4d4d4]">
+                    {isExecuting ? (
+                      <div>
+                        <span className="text-green-400">{'>>> '}</span>
+                        <span className="text-yellow-300">{`Running ${activeModelTab}...`}</span>
+                        <div className="flex mt-2 ml-8">
+                          <div className="animate-spin h-4 w-4 border-2 border-blue-400 border-t-transparent rounded-full mr-2"></div>
+                          <span className="text-blue-400">Processing data...</span>
+                        </div>
+                      </div>
+                    ) : outputResult ? (
+                      <div>
+                        <span className="text-green-400">{'>>> '}</span>
+                        <span className="text-yellow-300">{`${activeModelTab}.execute()`}</span>
+                        <div className="mt-2 pl-4 border-l-2 border-[#3e3e3e]">
+                          {outputResult.split('\n').map((line, i) => {
+                            // Add some color coding to the output
+                            if (line.includes('Error') || line.includes('error')) {
+                              return <div key={i} className="text-red-400">{line}</div>;
+                            } else if (line.includes('Results:') || line.includes('Statistics:') || line.match(/^[A-Za-z]+:/)) {
+                              return <div key={i} className="text-blue-400 font-semibold">{line}</div>;
+                            } else if (line.match(/^\d+\./)) {
+                              return <div key={i}><span className="text-yellow-300">{line.split('.')[0]}.</span>{line.substring(line.indexOf('.') + 1)}</div>;
+                            } else if (line.match(/^-/)) {
+                              return <div key={i} className="text-gray-400">{line}</div>;
+                            }
+                            return <div key={i}>{line}</div>;
+                          })}
+                        </div>
+                        <div className="mt-3">
+                          <span className="text-green-400">{'>>> '}</span>
+                          <span className="opacity-75 animate-pulse">_</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div>
+                        <div className="text-blue-400">Python {new Date().toLocaleString()}</div>
+                        <div className="text-gray-500 mb-4">[Matched Market Testing Environment]</div>
+                        <span className="text-green-400">{'>>> '}</span>
+                        <span className="opacity-75 animate-pulse">_</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </TabsContent>

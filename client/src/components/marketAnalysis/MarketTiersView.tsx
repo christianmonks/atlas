@@ -355,16 +355,18 @@ const MarketTiersView: React.FC<MarketTiersViewProps> = ({ csvData }) => {
                 .sort((a, b) => {
                   // Sort by tier first, then by score (descending)
                   if (a[TIER] !== b[TIER]) {
-                    return a[TIER].localeCompare(b[TIER]);
+                    return (a[TIER] || '').localeCompare(b[TIER] || '');
                   }
-                  return b[scoreColumn] - a[scoreColumn];
+                  const scoreA = typeof a[scoreColumn] === 'number' ? a[scoreColumn] : 0;
+                  const scoreB = typeof b[scoreColumn] === 'number' ? b[scoreColumn] : 0;
+                  return scoreB - scoreA;
                 })
                 .map((market, index) => (
                   <tr key={index}>
                     <td className="px-6 py-4 whitespace-nowrap">{market[TIER]}</td>
                     <td className="px-6 py-4 whitespace-nowrap">{market[marketNameColumn]}</td>
                     <td className="px-6 py-4 whitespace-nowrap">{market[marketCodeColumn]}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">{market[scoreColumn].toFixed(4)}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">{(market[scoreColumn] !== null && market[scoreColumn] !== undefined) ? Number(market[scoreColumn]).toFixed(4) : '0.0000'}</td>
                     <td className="px-6 py-4 whitespace-nowrap">{market.TierRank}</td>
                   </tr>
                 ))}

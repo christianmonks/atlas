@@ -7,6 +7,7 @@ import { Download } from "lucide-react";
 import FileUpload from "@/components/marketAnalysis/FileUpload";
 import MarketTiersView from "@/components/marketAnalysis/MarketTiersView";
 import MatchedMarketsView from "@/components/marketAnalysis/MatchedMarketsView";
+import SampleDataGenerator from "@/components/marketAnalysis/SampleDataGenerator";
 
 const MarketAnalysis: React.FC = () => {
   const [csvData, setCsvData] = useState<any[] | null>(null);
@@ -76,7 +77,14 @@ const MarketAnalysis: React.FC = () => {
       </div>
       
       {activeTest === "upload" ? (
-        <FileUpload onFileProcessed={handleFileProcessed} />
+        <div className="space-y-6">
+          <FileUpload onFileProcessed={handleFileProcessed} />
+          <SampleDataGenerator onDataGenerated={(data) => {
+            setCsvData(data);
+            setFileName("sample_market_data.csv");
+            setActiveTest("analysis");
+          }} />
+        </div>
       ) : (
         <Tabs defaultValue="market-tiers">
           <TabsList className="mb-6">
